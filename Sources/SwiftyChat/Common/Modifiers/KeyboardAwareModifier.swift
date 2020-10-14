@@ -9,7 +9,20 @@
 import SwiftUI
 import Combine
 
+public struct KeyboardIsActiveSubject: EnvironmentKey {
+    public static var defaultValue: CurrentValueSubject<Bool, Never> = .init(false)
+}
+
+public extension EnvironmentValues {
+    var keyboardIsActiveSubject: CurrentValueSubject<Bool, Never> {
+        get { self[KeyboardIsActiveSubject.self] }
+        set { self[KeyboardIsActiveSubject.self] = newValue }
+    }
+}
+
 public struct KeyboardAwareModifier: ViewModifier {
+    
+    @Environment(\.keyboardIsActiveSubject) var keyboardIsActiveSubject
     
     @State private var keyboardHeight: CGFloat = 0
 
@@ -31,6 +44,7 @@ public struct KeyboardAwareModifier: ViewModifier {
             .onReceive(keyboardHeightPublisher) { height in
                 withAnimation(.easeOut(duration: 0.2)) {
                     keyboardHeight = height
+                    keyboardIsActiveSubject.send(height != 0)
                 }
             }
     }

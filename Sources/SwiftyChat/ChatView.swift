@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import Combine
 
 public struct ChatView<Message: ChatMessage, User: ChatUser>: View {
     
@@ -20,11 +21,17 @@ public struct ChatView<Message: ChatMessage, User: ChatUser>: View {
     private var onAttributedTextTappedCallback: () -> AttributedTextTappedCallback = { return AttributedTextTappedCallback() }
     private var onCarouselItemAction: (CarouselItemButton, Message) -> Void = { (_, _) in }
     
+    private var keyboardSize: CGSize
+    
+    @Environment(\.keyboardIsActiveSubject) var keyboardIsActiveSubject
+    
     public init(
         messages: Binding<[Message]>,
+        keyboardSize: CGSize,
         inputView: @escaping (_ proxy: GeometryProxy) -> AnyView
     ) {
         self._messages = messages
+        self.keyboardSize = keyboardSize
         self.inputView = inputView
     }
     
@@ -38,21 +45,28 @@ public struct ChatView<Message: ChatMessage, User: ChatUser>: View {
     }
     
     // MARK: - Body in geometry
+    @ViewBuilder
     private func body(in geometry: GeometryProxy) -> some View {
         ZStack(alignment: .bottom) {
-                    
-            if #available(iOS 14.0, *) {
-                iOS14Body(in: geometry)
-                    .padding(.bottom, geometry.safeAreaInsets.bottom + 56)
-            } else {
-                iOS14Fallback(in: geometry)
-                    .padding(.bottom, geometry.safeAreaInsets.bottom + 56)
-            }
 
             inputView(geometry)
 
+            if #available(iOS 14.0, *) {
+                iOS14Body(in: geometry)
+                    .padding(.bottom, keyboardSize.height)
+                    .keyboardAwarePadding()
+
+//                    .padding(.bottom, keyboardIsActiveSubject.value ? 0 : geometry.safeAreaInsets.bottom + 84)
+                
+            } else {
+                iOS14Fallback(in: geometry)
+//                    .padding(.bottom, geometry.safeAreaInsets.bottom + 56)
+                    .padding(.bottom, keyboardIsActiveSubject.value ? 0 : geometry.safeAreaInsets.bottom + 84)
+                    .keyboardAwarePadding()
+            }
+
         }
-        .keyboardAwarePadding()
+//        .keyboardAwarePadding()
         .dismissKeyboardOnTappingOutside()
     }
     
